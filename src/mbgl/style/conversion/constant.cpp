@@ -167,12 +167,13 @@ std::optional<VerticalGradient> Converter<VerticalGradient>::operator()(const Co
         if (length >= 1 && length <= 2) {
             auto vector = Converter<std::vector<float>>{}(value, error);
             if (vector) {
-                if (!VerticalGradient::isInRange(*vector)) {
+                const std::span<const float> span(*vector);
+                if (!VerticalGradient::isInRange(span)) {
                     error.message = VerticalGradient::rangeErrorMessage;
                     return std::nullopt;
                 }
 
-                result = VerticalGradient(*vector);
+                result = VerticalGradient(span);
             }
         }
     } else {

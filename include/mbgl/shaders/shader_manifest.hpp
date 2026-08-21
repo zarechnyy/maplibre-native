@@ -22,6 +22,10 @@
 #include <mbgl/shaders/gl/fill_extrusion_instanced.hpp>
 #include <mbgl/shaders/gl/fill_extrusion_pattern.hpp>
 #include <mbgl/shaders/gl/fill_extrusion_pattern_instanced.hpp>
+#include <mbgl/shaders/gl/fill_extrusion_shadow_mask.hpp>
+#include <mbgl/shaders/gl/fill_extrusion_shadow_mask_instanced.hpp>
+#include <mbgl/shaders/gl/fill_extrusion_shadow_blur.hpp>
+#include <mbgl/shaders/gl/fill_extrusion_shadow.hpp>
 #include <mbgl/shaders/gl/heatmap.hpp>
 #include <mbgl/shaders/gl/heatmap_texture.hpp>
 #include <mbgl/shaders/gl/hillshade_prepare.hpp>

@@ -110,6 +110,7 @@ highp vec4 color = u_color;
 
     // Add gradient along z axis of side surfaces
     if (normal.z == 0.0) {
+        // `u_gradient_reference_height_inv` selects the shading model, and holds the reciprocal of the reference height.
         // Zero runs the uniform ramp instead, shading every building the same regardless of height.
         // u_gradient_depth sets how dark the foot of a wall gets: 0 is off, 0.5 matches
         // what a style value of true gives, 1 is twice as dark.

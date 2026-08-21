@@ -6,6 +6,7 @@
 #include <mbgl/style/property_expression.hpp>
 #include <mbgl/util/vertical_gradient.hpp>
 
+#include <span>
 #include <stdexcept>
 #include <vector>
 
@@ -15,7 +16,7 @@ using namespace mln::style;
 namespace {
 
 VerticalGradient fromArray(std::vector<float> values) {
-    return VerticalGradient(values);
+    return VerticalGradient(std::span<const float>(values));
 }
 
 } // namespace
@@ -57,7 +58,7 @@ TEST(VerticalGradient, ArrayCanReproduceLegacy) {
 
 TEST(VerticalGradient, IsInRange) {
     auto inRange = [](std::vector<float> values) {
-        return VerticalGradient::isInRange(values);
+        return VerticalGradient::isInRange(std::span<const float>(values));
     };
 
     EXPECT_TRUE(inRange({0.0f}));

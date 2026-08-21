@@ -192,6 +192,10 @@ list(APPEND SRC_FILES
     ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_layer_tweaker.hpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_extrusion_layer_tweaker.cpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_extrusion_layer_tweaker.hpp
+    ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_extrusion_shadow_layer_tweaker.cpp
+    ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_extrusion_shadow_layer_tweaker.hpp
+    ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_extrusion_shadow_texture_layer_tweaker.cpp
+    ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/fill_extrusion_shadow_texture_layer_tweaker.hpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/heatmap_layer_tweaker.cpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/heatmap_layer_tweaker.hpp
     ${PROJECT_SOURCE_DIR}/src/mbgl/renderer/layers/heatmap_texture_layer_tweaker.cpp
