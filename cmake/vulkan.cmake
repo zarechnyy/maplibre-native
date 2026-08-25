@@ -45,6 +45,7 @@ list(APPEND
         ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/custom_symbol_icon.hpp
         ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/fill.hpp
         ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/fill_extrusion.hpp
+        ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/fill_extrusion_shadow.hpp
         ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/heatmap.hpp
         ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/heatmap_texture.hpp
         ${PROJECT_SOURCE_DIR}/include/mbgl/shaders/vulkan/hillshade.hpp
@@ -91,6 +92,7 @@ list(APPEND
         ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/debug.cpp
         ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/fill.cpp
         ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/fill_extrusion.cpp
+        ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/fill_extrusion_shadow.cpp
         ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/heatmap.cpp
         ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/heatmap_texture.cpp
         ${PROJECT_SOURCE_DIR}/src/mbgl/shaders/vulkan/hillshade.cpp
