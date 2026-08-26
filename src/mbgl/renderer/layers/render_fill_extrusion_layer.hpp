@@ -52,18 +52,25 @@ private:
 #if MLN_USE_FILL_EXTRUSION_INSTANCING
     gfx::ShaderGroupPtr fillExtrusionInstancedGroup;
     gfx::ShaderGroupPtr fillExtrusionPatternInstancedGroup;
+#endif
 
+#if MLN_USE_FILL_EXTRUSION_INSTANCING || MLN_USE_FILL_EXTRUSION_SHADOW
+    // Shared by the regular building walls' instanced layout (Metal/Vulkan) and the shadow mask's
+    // static full-screen/unit quads (every backend that supports shadows).
     using FillExtrusionVertexVector = gfx::VertexVector<FillExtrusionStaticVertex>;
     using TriangleIndexVector = gfx::IndexVector<gfx::Triangles>;
 
     std::shared_ptr<FillExtrusionVertexVector> staticDataVertices;
     std::shared_ptr<TriangleIndexVector> staticDataIndices;
     std::shared_ptr<SegmentVector> staticDataSegments;
+#endif
 
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     // Ground shadows. The mask silhouette is rendered offscreen, blurred, then composited under the
-    // buildings. Only the instanced (Metal/Vulkan) geometry layout is supported, and the shaders are
-    // currently only specialized for Metal -- on other backends the shader lookup simply fails and
-    // the whole feature stays switched off.
+    // buildings. The wall-mask shader's per-instance data layout is backend-specific (see
+    // MLN_USE_FILL_EXTRUSION_SHADOW's definition); on backends without a shadow shader
+    // specialization, the shader lookup in prepareShadow() simply fails and the whole feature stays
+    // switched off.
 
     /// Whether the evaluated properties ask for a shadow at all.
     bool shadowEnabled() const;

@@ -136,6 +136,35 @@ struct ShaderInfo<BuiltIn::FillExtrusionPatternShader, gfx::Backend::Type::OpenG
 };
 
 template <>
+struct ShaderInfo<BuiltIn::FillExtrusionShadowMaskShader, gfx::Backend::Type::OpenGL> {
+    static const std::vector<AttributeInfo> attributes;
+    static const std::vector<UniformBlockInfo> uniformBlocks;
+    static const std::vector<TextureInfo> textures;
+};
+
+template <>
+struct ShaderInfo<BuiltIn::FillExtrusionShadowMaskInstancedShader, gfx::Backend::Type::OpenGL> {
+    static const std::vector<AttributeInfo> attributes;
+    static const std::vector<AttributeInfo> instanceAttributes;
+    static const std::vector<UniformBlockInfo> uniformBlocks;
+    static const std::vector<TextureInfo> textures;
+};
+
+template <>
+struct ShaderInfo<BuiltIn::FillExtrusionShadowBlurShader, gfx::Backend::Type::OpenGL> {
+    static const std::vector<AttributeInfo> attributes;
+    static const std::vector<UniformBlockInfo> uniformBlocks;
+    static const std::vector<TextureInfo> textures;
+};
+
+template <>
+struct ShaderInfo<BuiltIn::FillExtrusionShadowShader, gfx::Backend::Type::OpenGL> {
+    static const std::vector<AttributeInfo> attributes;
+    static const std::vector<UniformBlockInfo> uniformBlocks;
+    static const std::vector<TextureInfo> textures;
+};
+
+template <>
 struct ShaderInfo<BuiltIn::HeatmapShader, gfx::Backend::Type::OpenGL> {
     static const std::vector<AttributeInfo> attributes;
     static const std::vector<UniformBlockInfo> uniformBlocks;

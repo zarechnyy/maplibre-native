@@ -23,6 +23,13 @@ using FillExtrusionLayoutVertex = gfx::Vertex<TypeList<attributes::pos, attribut
 using FillExtrusionLayoutVertex = gfx::Vertex<TypeList<attributes::pos, attributes::decimals_ed, attributes::normal2d>>;
 #endif
 
+#if MLN_RENDER_BACKEND_OPENGL
+// On this backend `FillExtrusionLayoutVertex`/`sharedTriangles` mix fully-expanded wall quads with
+// roof triangles, which the ground shadow can't use directly (it needs one vertex per ring point
+// and a roof-only triangle list). Built additively in addFeature() alongside the existing buffers.
+using FillExtrusionShadowVertex = gfx::Vertex<TypeList<attributes::pos, attributes::decimals_ed>>;
+#endif
+
 class FillExtrusionBucket final : public Bucket {
 public:
     ~FillExtrusionBucket() override;
@@ -82,6 +89,21 @@ public:
     }
 #endif
 
+#if MLN_RENDER_BACKEND_OPENGL
+    // Same shape/packing as the MLN_USE_FILL_EXTRUSION_INSTANCING layoutVertex() overload above,
+    // under its own name and type so it doesn't collide with this backend's own layoutVertex().
+    static FillExtrusionShadowVertex shadowOutlineVertex(const Point<double>& p,
+                                                          uint16_t edgeDistance,
+                                                          bool isDiscarded) {
+        auto intPart = Point<double>(std::floor(p.x), std::floor(p.y));
+        auto fracPart = convertPoint<uint8_t>((p - intPart) * 128.0);
+
+        return FillExtrusionShadowVertex{
+            {static_cast<int16_t>(intPart.x), static_cast<int16_t>(intPart.y)},
+            {static_cast<uint16_t>((fracPart.x * 256 + fracPart.y) * 2 + (isDiscarded ? 1 : 0)), edgeDistance}};
+    }
+#endif
+
     PossiblyEvaluatedLayoutProperties layout;
 
     static std::array<float, 3> lightColor(const EvaluatedLight&);
@@ -97,6 +119,22 @@ public:
     TriangleIndexVector& triangles = *sharedTriangles;
 
     SegmentVector triangleSegments;
+
+#if MLN_RENDER_BACKEND_OPENGL
+    // See FillExtrusionShadowVertex above for why these exist alongside sharedVertices/sharedTriangles.
+    using ShadowVertexVector = gfx::VertexVector<FillExtrusionShadowVertex>;
+    const std::shared_ptr<ShadowVertexVector> sharedShadowVertices = std::make_shared<ShadowVertexVector>();
+
+    const std::shared_ptr<TriangleIndexVector> sharedShadowTriangles = std::make_shared<TriangleIndexVector>();
+
+    SegmentVector shadowTriangleSegments;
+
+    // `paintPropertyBinders` below is built to match `vertices`' indexing (one entry per
+    // wall-expanded vertex), so its data-driven `base`/`height` values can't be read directly
+    // against `sharedShadowVertices`, which has a different vertex count per feature. This
+    // parallel set is populated the same way, but counted against `sharedShadowVertices` instead.
+    std::unordered_map<std::string, FillExtrusionBinders> shadowPaintPropertyBinders;
+#endif
 
     std::unordered_map<std::string, FillExtrusionBinders> paintPropertyBinders;
 };

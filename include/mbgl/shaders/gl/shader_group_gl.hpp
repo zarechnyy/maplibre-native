@@ -52,15 +52,31 @@ public:
         }
 
         auto& glContext = static_cast<gl::Context&>(context);
-        shader = ShaderProgramGL::create(glContext,
-                                         programParameters,
-                                         firstAttribName,
-                                         shaders::ShaderInfo<ShaderID, gfx::Backend::Type::OpenGL>::uniformBlocks,
-                                         shaders::ShaderInfo<ShaderID, gfx::Backend::Type::OpenGL>::textures,
-                                         shaders::ShaderInfo<ShaderID, gfx::Backend::Type::OpenGL>::attributes,
-                                         vert,
-                                         frag,
-                                         additionalDefines);
+        using Info = shaders::ShaderInfo<ShaderID, gfx::Backend::Type::OpenGL>;
+        // Only the shadow wall-mask shader currently declares Info::instanceAttributes; the
+        // if constexpr keeps every other (non-instanced) ShaderInfo specialization untouched.
+        if constexpr (requires { Info::instanceAttributes; }) {
+            shader = ShaderProgramGL::create(glContext,
+                                             programParameters,
+                                             firstAttribName,
+                                             Info::uniformBlocks,
+                                             Info::textures,
+                                             Info::attributes,
+                                             vert,
+                                             frag,
+                                             additionalDefines,
+                                             Info::instanceAttributes);
+        } else {
+            shader = ShaderProgramGL::create(glContext,
+                                             programParameters,
+                                             firstAttribName,
+                                             Info::uniformBlocks,
+                                             Info::textures,
+                                             Info::attributes,
+                                             vert,
+                                             frag,
+                                             additionalDefines);
+        }
         if (!shader || !registerShader(shader, shaderName)) {
             throw std::runtime_error("Failed to register " + shaderName + " with shader group!");
         }

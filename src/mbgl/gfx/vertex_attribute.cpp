@@ -79,7 +79,9 @@ std::size_t VertexAttribute::getStrideOf(gfx::AttributeDataType type) {
 }
 
 std::size_t VertexAttribute::getCount() const {
-    return sharedRawData ? sharedRawData->getRawCount() : items.size();
+    // sharedVertexOffset shifts this attribute's read start within the shared buffer, so fewer
+    // elements are available past that point.
+    return sharedRawData ? sharedRawData->getRawCount() - sharedVertexOffset : items.size();
 }
 
 const std::unique_ptr<VertexAttribute> VertexAttributeArray::nullref;

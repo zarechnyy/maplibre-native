@@ -71,7 +71,12 @@ enum {
 };
 
 #define MLN_UBO_CONSOLIDATION (MLN_RENDER_BACKEND_METAL || MLN_RENDER_BACKEND_VULKAN || MLN_RENDER_BACKEND_WEBGPU)
+// Instanced geometry for the regular (non-shadow) building walls.
 #define MLN_USE_FILL_EXTRUSION_INSTANCING (MLN_RENDER_BACKEND_METAL || MLN_RENDER_BACKEND_VULKAN)
+// Ground-shadow feature (mask/blur/composite passes). Independent of the instancing macro above:
+// GL's shadow wall mask uses its own per-instance attribute layout instead of instancing.
+#define MLN_USE_FILL_EXTRUSION_SHADOW \
+    (MLN_RENDER_BACKEND_METAL || MLN_RENDER_BACKEND_VULKAN || MLN_RENDER_BACKEND_OPENGL)
 
 } // namespace shaders
 } // namespace mln

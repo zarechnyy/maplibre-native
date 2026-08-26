@@ -20,21 +20,27 @@ public:
 
     ShaderProgramGL(UniqueProgram&& glProgram_);
     ShaderProgramGL(UniqueProgram&&, VertexAttributeArrayGL&& attributes, SamplerLocationArray&& samplerLocations);
+    ShaderProgramGL(UniqueProgram&&,
+                    VertexAttributeArrayGL&& attributes,
+                    VertexAttributeArrayGL&& instanceAttributes,
+                    SamplerLocationArray&& samplerLocations);
     ShaderProgramGL(ShaderProgramGL&& other);
     ~ShaderProgramGL() noexcept override = default;
 
     static constexpr std::string_view Name{"GenericGLShader"};
     const std::string_view typeName() const noexcept override { return Name; }
 
-    static std::shared_ptr<ShaderProgramGL> create(Context&,
-                                                   const ProgramParameters& programParameters,
-                                                   const std::string_view firstAttribName,
-                                                   const std::vector<shaders::UniformBlockInfo>& uniformBlocksInfo,
-                                                   const std::vector<shaders::TextureInfo>& texturesInfo,
-                                                   const std::vector<shaders::AttributeInfo>& attributesInfo,
-                                                   const std::string& vertexSource,
-                                                   const std::string& fragmentSource,
-                                                   const std::string& additionalDefines = "") noexcept(false);
+    static std::shared_ptr<ShaderProgramGL> create(
+        Context&,
+        const ProgramParameters& programParameters,
+        const std::string_view firstAttribName,
+        const std::vector<shaders::UniformBlockInfo>& uniformBlocksInfo,
+        const std::vector<shaders::TextureInfo>& texturesInfo,
+        const std::vector<shaders::AttributeInfo>& attributesInfo,
+        const std::string& vertexSource,
+        const std::string& fragmentSource,
+        const std::string& additionalDefines = "",
+        const std::vector<shaders::AttributeInfo>& instanceAttributesInfo = {}) noexcept(false);
 
     std::optional<size_t> getSamplerLocation(const size_t id) const override;
 

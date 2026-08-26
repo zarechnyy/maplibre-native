@@ -81,7 +81,7 @@ public:
     void setScissorTest(const gfx::ScissorRect&);
     bool hasStencilBuffer() const;
 
-    void draw(const gfx::DrawMode&, std::size_t indexOffset, std::size_t indexLength);
+    void draw(const gfx::DrawMode&, std::size_t indexOffset, std::size_t indexLength, std::size_t instanceCount = 1);
 
     void finish();
 

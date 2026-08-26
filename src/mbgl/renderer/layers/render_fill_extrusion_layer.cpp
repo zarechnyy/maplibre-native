@@ -30,7 +30,7 @@
 #include <mbgl/shaders/fill_extrusion_layer_ubo.hpp>
 #include <mbgl/shaders/shader_program_base.hpp>
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
 #include <mbgl/renderer/layers/fill_extrusion_shadow_layer_tweaker.hpp>
 #include <mbgl/renderer/layers/fill_extrusion_shadow_texture_layer_tweaker.hpp>
 #include <mbgl/shaders/fill_extrusion_shadow_layer_ubo.hpp>
@@ -78,7 +78,7 @@ void RenderFillExtrusionLayer::evaluate(const PropertyEvaluationParameters& para
     if (layerTweaker) {
         layerTweaker->updateProperties(evaluatedProperties);
     }
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     // The shadow stages have their own tweakers, on their own layer groups. Without this they keep
     // whatever properties they were constructed with, and changing the shadow colour, length,
     // azimuth or blur on a layer that already has a shadow would have no effect.
@@ -104,7 +104,7 @@ bool RenderFillExtrusionLayer::is3D() const {
     return true;
 }
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
 namespace {
 
 void activateRenderTarget(const RenderTargetPtr& renderTarget, bool activate, UniqueChangeRequestVec& changes) {
@@ -121,7 +121,7 @@ void activateRenderTarget(const RenderTargetPtr& renderTarget, bool activate, Un
 #endif
 
 void RenderFillExtrusionLayer::markLayerRenderable(bool willRender, UniqueChangeRequestVec& changes) {
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     // The composite group has to be registered before `layerGroup`. Layer groups live in a
     // std::multimap keyed by layer index, and insert() places equivalent keys at the upper bound of
     // their range, so insertion order decides draw order within one index. That is what puts the
@@ -137,7 +137,7 @@ void RenderFillExtrusionLayer::markLayerRenderable(bool willRender, UniqueChange
 }
 
 void RenderFillExtrusionLayer::layerIndexChanged(int32_t newLayerIndex, UniqueChangeRequestVec& changes) {
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     // Same ordering rule as above: the re-insert must keep the shadow ahead of the buildings.
     layerIndex = newLayerIndex;
     changeLayerIndex(shadowCompositeGroup, newLayerIndex, changes);
@@ -150,7 +150,7 @@ void RenderFillExtrusionLayer::layerIndexChanged(int32_t newLayerIndex, UniqueCh
 std::size_t RenderFillExtrusionLayer::removeAllDrawables() {
     auto removed = RenderLayer::removeAllDrawables();
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     for (const auto& target : {shadowMaskTarget, shadowBlurTarget}) {
         if (target) {
             if (const auto& group = target->getLayerGroup(0)) {
@@ -172,7 +172,7 @@ std::size_t RenderFillExtrusionLayer::removeAllDrawables() {
     return removed;
 }
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
 
 bool RenderFillExtrusionLayer::shadowEnabled() const {
     const auto& evaluated = static_cast<const FillExtrusionLayerProperties&>(*evaluatedProperties).evaluated;
@@ -386,7 +386,7 @@ void RenderFillExtrusionLayer::updateShadowQuads(gfx::Context& context) {
               compositeGroup);
 }
 
-#endif // MLN_USE_FILL_EXTRUSION_INSTANCING
+#endif // MLN_USE_FILL_EXTRUSION_SHADOW
 
 bool RenderFillExtrusionLayer::queryIntersectsFeature(const GeometryCoordinates& queryGeometry,
                                                       const GeometryTileFeature& feature,
@@ -416,13 +416,13 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
                                       UniqueChangeRequestVec& changes) {
     if (!renderTiles || renderTiles->empty() || passes == RenderPass::None) {
         removeAllDrawables();
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
         teardownShadow(changes);
 #endif
         return;
     }
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     // Establish the shadow resources before the buildings' layer group, so the composite quad is
     // registered first and therefore draws underneath. Costs nothing when the shadow is off.
     bool drawShadow = false;
@@ -480,7 +480,7 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
     };
     stats.drawablesRemoved += tileLayerGroup->removeDrawablesIf(dropStaleDrawables);
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     if (drawShadow) {
         if (auto* maskGroup = static_cast<TileLayerGroup*>(shadowMaskTarget->getLayerGroup(0).get())) {
             stats.drawablesRemoved += maskGroup->removeDrawablesIf(dropStaleDrawables);
@@ -503,14 +503,8 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
 
     tileLayerGroup->setStencilTiles(renderTiles);
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
-    if (!fillExtrusionInstancedGroup) {
-        fillExtrusionInstancedGroup = shaders.getShaderGroup("FillExtrusionInstancedShader");
-    }
-    if (!fillExtrusionPatternInstancedGroup) {
-        fillExtrusionPatternInstancedGroup = shaders.getShaderGroup("FillExtrusionPatternInstancedShader");
-    }
-
+#if MLN_USE_FILL_EXTRUSION_INSTANCING || MLN_USE_FILL_EXTRUSION_SHADOW
+    // Shared by the regular building walls' instanced layout and the shadow mask's static quads.
     if (!staticDataVertices) {
         staticDataVertices = std::make_shared<FillExtrusionVertexVector>(RenderStaticData::fillExtrusionVertices());
     }
@@ -520,6 +514,16 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
     if (!staticDataSegments) {
         staticDataSegments = std::make_shared<SegmentVector>(RenderStaticData::fillExtrusionSegments());
     }
+    const auto instanceVertexCount = staticDataVertices->elements();
+#endif
+
+#if MLN_USE_FILL_EXTRUSION_INSTANCING
+    if (!fillExtrusionInstancedGroup) {
+        fillExtrusionInstancedGroup = shaders.getShaderGroup("FillExtrusionInstancedShader");
+    }
+    if (!fillExtrusionPatternInstancedGroup) {
+        fillExtrusionPatternInstancedGroup = shaders.getShaderGroup("FillExtrusionPatternInstancedShader");
+    }
 
     const auto& instancedShaderGroup = hasPattern ? fillExtrusionPatternInstancedGroup : fillExtrusionInstancedGroup;
     if (!instancedShaderGroup) {
@@ -527,7 +531,6 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
         return;
     }
 
-    const auto instanceVertexCount = staticDataVertices->elements();
     std::unique_ptr<gfx::DrawableBuilder> instancedDepthBuilder;
     std::unique_ptr<gfx::DrawableBuilder> instancedColorBuilder;
     StringIDSetsPair instancePropertiesAsUniforms;
@@ -537,7 +540,7 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
     // bucket was replaced does not leave a mask drawable pointing at stale binders.
     const auto removeTileEverywhere = [&](RenderPass pass, const OverscaledTileID& id) {
         removeTile(pass, id);
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
         if (drawShadow) {
             if (auto* maskGroup = static_cast<TileLayerGroup*>(shadowMaskTarget->getLayerGroup(0).get())) {
                 stats.drawablesRemoved += maskGroup->removeDrawables(pass, id).size();
@@ -843,21 +846,32 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
             finishInstance(*instancedDepthBuilder);
         }
         finishInstance(*instancedColorBuilder);
+#endif // MLN_USE_FILL_EXTRUSION_INSTANCING
 
+#if MLN_USE_FILL_EXTRUSION_SHADOW
         if (drawShadow) {
             auto* maskGroup = static_cast<TileLayerGroup*>(shadowMaskTarget->getLayerGroup(0).get());
 
             // The shadow reads only base and height. Its own attribute id space keeps it independent
             // of the building shaders' permutations.
+#if MLN_RENDER_BACKEND_OPENGL
+            // `binders` is counted against `bucket.vertices` (wall-expanded), which doesn't align
+            // with `bucket.sharedShadowVertices` (one vertex per ring point) used below -- read
+            // base/height from the parallel binder set that's counted against that buffer instead.
+            auto& shadowBinders = bucket.shadowPaintPropertyBinders.at(getID());
+#else
+            auto& shadowBinders = binders;
+#endif
+
             StringIDSetsPair shadowPropertiesAsUniforms;
             auto shadowRoofAttrs = context.createVertexAttributeArray();
             shadowRoofAttrs->readDataDrivenPaintProperties<FillExtrusionBase, FillExtrusionHeight>(
-                binders, evaluated, shadowPropertiesAsUniforms, idFillExtrusionShadowBaseVertexAttribute);
+                shadowBinders, evaluated, shadowPropertiesAsUniforms, idFillExtrusionShadowBaseVertexAttribute);
 
             StringIDSetsPair shadowInstancePropertiesAsUniforms;
             auto shadowInstanceAttrs = context.createVertexAttributeArray();
             shadowInstanceAttrs->readDataDrivenPaintProperties<FillExtrusionBase, FillExtrusionHeight>(
-                binders, evaluated, shadowInstancePropertiesAsUniforms, idFillExtrusionShadowBaseVertexAttribute);
+                shadowBinders, evaluated, shadowInstancePropertiesAsUniforms, idFillExtrusionShadowBaseVertexAttribute);
 
             const auto maskShader = std::static_pointer_cast<gfx::ShaderProgramBase>(
                 shadowMaskShaderGroup->getOrCreateShader(context, shadowPropertiesAsUniforms));
@@ -865,19 +879,40 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
                 shadowMaskInstancedShaderGroup->getOrCreateShader(context, shadowInstancePropertiesAsUniforms));
 
             if (maskShader && maskInstancedShader) {
-                // Roof geometry, straight from the bucket's own vertices.
+#if MLN_RENDER_BACKEND_OPENGL
+                // On this backend bucket.sharedVertices/sharedTriangles hold fully-expanded wall
+                // quads mixed with the roof triangles (see FillExtrusionShadowVertex in
+                // fill_extrusion_bucket.hpp) -- unusable as-is for the shadow, so it reads from the
+                // bucket's separate, shadow-only vertex/triangle buffers instead.
+                const auto& shadowOutlineSource = bucket.sharedShadowVertices;
+                const auto& shadowRoofTriangleSource = bucket.sharedShadowTriangles;
+                const auto* shadowRoofSegmentSource = &bucket.shadowTriangleSegments;
+                const auto shadowRoofVertexCount = bucket.sharedShadowVertices->elements();
+                using ShadowOutlineVertex = FillExtrusionShadowVertex;
+#else
+                // Metal/Vulkan's regular bucket.sharedVertices is already exactly the simple,
+                // one-vertex-per-ring-point shape the shadow needs, and bucket.sharedTriangles is
+                // already roof-only, so the shadow reads them directly -- no separate buffers.
+                const auto& shadowOutlineSource = bucket.sharedVertices;
+                const auto& shadowRoofTriangleSource = bucket.sharedTriangles;
+                const auto* shadowRoofSegmentSource = &bucket.triangleSegments;
+                const auto shadowRoofVertexCount = vertexCount;
+                using ShadowOutlineVertex = FillExtrusionLayoutVertex;
+#endif
+
+                // Roof geometry.
                 if (const auto& attr = shadowRoofAttrs->set(idFillExtrusionShadowPosVertexAttribute)) {
-                    attr->setSharedRawData(bucket.sharedVertices,
-                                           offsetof(FillExtrusionLayoutVertex, a1),
+                    attr->setSharedRawData(shadowOutlineSource,
+                                           offsetof(ShadowOutlineVertex, a1),
                                            /*vertexOffset=*/0,
-                                           sizeof(FillExtrusionLayoutVertex),
+                                           sizeof(ShadowOutlineVertex),
                                            gfx::AttributeDataType::Short2);
                 }
                 if (const auto& attr = shadowRoofAttrs->set(idFillExtrusionShadowDecimalsEdAttribute)) {
-                    attr->setSharedRawData(bucket.sharedVertices,
-                                           offsetof(FillExtrusionLayoutVertex, a2),
+                    attr->setSharedRawData(shadowOutlineSource,
+                                           offsetof(ShadowOutlineVertex, a2),
                                            /*vertexOffset=*/0,
-                                           sizeof(FillExtrusionLayoutVertex),
+                                           sizeof(ShadowOutlineVertex),
                                            gfx::AttributeDataType::UShort2);
                 }
 
@@ -891,19 +926,42 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
                                            gfx::AttributeDataType::Short2);
                 }
                 if (const auto& attr = shadowInstanceAttrs->set(idFillExtrusionShadowOutlinePosAttribute)) {
-                    attr->setSharedRawData(bucket.sharedVertices,
-                                           offsetof(FillExtrusionLayoutVertex, a1),
+                    attr->setSharedRawData(shadowOutlineSource,
+                                           offsetof(ShadowOutlineVertex, a1),
                                            /*vertexOffset=*/0,
-                                           sizeof(FillExtrusionLayoutVertex),
+                                           sizeof(ShadowOutlineVertex),
                                            gfx::AttributeDataType::Short2);
                 }
                 if (const auto& attr = shadowInstanceAttrs->set(idFillExtrusionShadowDecimalsEdAttribute)) {
-                    attr->setSharedRawData(bucket.sharedVertices,
-                                           offsetof(FillExtrusionLayoutVertex, a2),
+                    attr->setSharedRawData(shadowOutlineSource,
+                                           offsetof(ShadowOutlineVertex, a2),
                                            /*vertexOffset=*/0,
-                                           sizeof(FillExtrusionLayoutVertex),
+                                           sizeof(ShadowOutlineVertex),
                                            gfx::AttributeDataType::UShort2);
                 }
+#if MLN_RENDER_BACKEND_OPENGL
+                // GLES has no SSBO-style manual instance indexing, so unlike Metal/Vulkan (which
+                // read outline[gl_InstanceIndex] and outline[gl_InstanceIndex + 1] from one
+                // buffer in-shader), the GL wall shader needs the next outline vertex supplied as
+                // its own real per-instance attribute: the same buffer, shifted one vertex ahead.
+                // VertexAttribute::getCount() subtracts sharedVertexOffset, so the instance count
+                // this pair drives the draw call with is already one shorter -- no separate clamp
+                // needed to avoid reading past the end of the shared outline buffer.
+                if (const auto& attr = shadowInstanceAttrs->set(idFillExtrusionShadowNextOutlinePosAttribute)) {
+                    attr->setSharedRawData(shadowOutlineSource,
+                                           offsetof(ShadowOutlineVertex, a1),
+                                           /*vertexOffset=*/1,
+                                           sizeof(ShadowOutlineVertex),
+                                           gfx::AttributeDataType::Short2);
+                }
+                if (const auto& attr = shadowInstanceAttrs->set(idFillExtrusionShadowNextDecimalsEdAttribute)) {
+                    attr->setSharedRawData(shadowOutlineSource,
+                                           offsetof(ShadowOutlineVertex, a2),
+                                           /*vertexOffset=*/1,
+                                           sizeof(ShadowOutlineVertex),
+                                           gfx::AttributeDataType::UShort2);
+                }
+#endif
 
                 // Culling must be off: flattening the walls onto the ground makes them degenerate or
                 // reverses their winding, which would punch holes in the silhouette. The render
@@ -932,16 +990,16 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
                     }
                 };
 
-                if (bucket.sharedTriangles->elements()) {
+                if (shadowRoofTriangleSource->elements()) {
                     if (auto builder = context.createDrawableBuilder(layerPrefix + "shadowMaskRoof")) {
                         builder->setShader(maskShader);
                         configureMask(*builder);
                         builder->setVertexAttributes(std::move(shadowRoofAttrs));
-                        builder->setRawVertices({}, vertexCount, gfx::AttributeDataType::Short2);
+                        builder->setRawVertices({}, shadowRoofVertexCount, gfx::AttributeDataType::Short2);
                         builder->setSegments(gfx::Triangles(),
-                                             bucket.sharedTriangles,
-                                             bucket.triangleSegments.data(),
-                                             bucket.triangleSegments.size());
+                                             shadowRoofTriangleSource,
+                                             shadowRoofSegmentSource->data(),
+                                             shadowRoofSegmentSource->size());
                         finishMask(*builder);
                     }
                 }
@@ -965,7 +1023,7 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
 #endif
     }
 
-#if MLN_USE_FILL_EXTRUSION_INSTANCING
+#if MLN_USE_FILL_EXTRUSION_SHADOW
     if (drawShadow) {
         const auto t0 = std::chrono::steady_clock::now();
         updateShadowQuads(context);

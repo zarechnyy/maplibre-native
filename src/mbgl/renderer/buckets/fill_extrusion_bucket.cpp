@@ -62,11 +62,20 @@ FillExtrusionBucket::FillExtrusionBucket(
             std::piecewise_construct,
             std::forward_as_tuple(pair.first),
             std::forward_as_tuple(getEvaluated<FillExtrusionLayerProperties>(pair.second), zoom));
+#if MLN_RENDER_BACKEND_OPENGL
+        shadowPaintPropertyBinders.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(pair.first),
+            std::forward_as_tuple(getEvaluated<FillExtrusionLayerProperties>(pair.second), zoom));
+#endif
     }
 }
 
 FillExtrusionBucket::~FillExtrusionBucket() {
     sharedVertices->release();
+#if MLN_RENDER_BACKEND_OPENGL
+    sharedShadowVertices->release();
+#endif
 }
 
 void FillExtrusionBucket::addFeature(const GeometryTileFeature& feature,
@@ -114,6 +123,24 @@ void FillExtrusionBucket::addFeature(const GeometryTileFeature& feature,
 
         assert(triangleIndex + (5 * (totalVertices - 1) + 1) <= std::numeric_limits<uint16_t>::max());
 
+#if MLN_RENDER_BACKEND_OPENGL
+        // Mirrors the bookkeeping above, but for the shadow-only vertices/triangles: one vertex
+        // per ring point (not 5), since there's no wall-quad expansion here.
+        std::vector<uint32_t> shadowFlatIndices;
+        shadowFlatIndices.reserve(totalVertices);
+        std::size_t startShadowVertices = sharedShadowVertices->elements();
+
+        if (shadowTriangleSegments.empty() ||
+            shadowTriangleSegments.back().vertexLength + totalVertices > std::numeric_limits<uint16_t>::max()) {
+            shadowTriangleSegments.emplace_back(startShadowVertices, sharedShadowTriangles->elements());
+        }
+
+        auto& shadowTriangleSegment = shadowTriangleSegments.back();
+        assert(shadowTriangleSegment.vertexLength <= std::numeric_limits<uint16_t>::max());
+        auto shadowTriangleIndex = static_cast<uint16_t>(shadowTriangleSegment.vertexLength);
+        assert(shadowTriangleIndex + totalVertices <= std::numeric_limits<uint16_t>::max());
+#endif
+
         const auto processRingPoints =
             [&](const Point<double>& p1, const std::optional<Point<double>>& p2, std::size_t& edgeDistance) {
 #if MLN_USE_FILL_EXTRUSION_INSTANCING
@@ -133,6 +160,12 @@ void FillExtrusionBucket::addFeature(const GeometryTileFeature& feature,
                 vertices.emplace_back(FillExtrusionBucket::layoutVertex(p1, 0, 0, 1, edgeDistance));
                 flatIndices.emplace_back(triangleIndex);
                 triangleIndex++;
+
+#if MLN_RENDER_BACKEND_OPENGL
+                sharedShadowVertices->emplace_back(FillExtrusionBucket::shadowOutlineVertex(p1, edgeDistance, !p2));
+                shadowFlatIndices.emplace_back(shadowTriangleIndex);
+                shadowTriangleIndex++;
+#endif
 
                 if (p2) {
                     const Point<double> perp = util::unit(util::perp(*p2 - p1));
@@ -201,6 +234,19 @@ void FillExtrusionBucket::addFeature(const GeometryTileFeature& feature,
 
         triangleSegment.vertexLength += totalVertices;
         triangleSegment.indexLength += nIndices;
+
+#if MLN_RENDER_BACKEND_OPENGL
+        // `indices` is a list of ring-point ordinals from earcut, oblivious to which vertex buffer
+        // backs them -- shadowFlatIndices maps the same ordinals to sharedShadowVertices, exactly
+        // as flatIndices does to `vertices` above.
+        for (std::size_t i = 0; i < nIndices; i += 3) {
+            sharedShadowTriangles->emplace_back(static_cast<uint16_t>(shadowFlatIndices[indices[i]]),
+                                                static_cast<uint16_t>(shadowFlatIndices[indices[i + 2]]),
+                                                static_cast<uint16_t>(shadowFlatIndices[indices[i + 1]]));
+        }
+        shadowTriangleSegment.vertexLength += totalVertices;
+        shadowTriangleSegment.indexLength += nIndices;
+#endif
     }
 
     for (auto& pair : paintPropertyBinders) {
@@ -212,6 +258,21 @@ void FillExtrusionBucket::addFeature(const GeometryTileFeature& feature,
             pair.second.populateVertexVectors(feature, vertices.elements(), index, patternPositions, {}, canonical);
         }
     }
+
+#if MLN_RENDER_BACKEND_OPENGL
+    // Counted against `sharedShadowVertices` (one vertex per ring point) rather than `vertices`
+    // (wall-expanded), so per-feature base/height values land on the right shadow vertices.
+    for (auto& pair : shadowPaintPropertyBinders) {
+        const auto it = patternDependencies.find(pair.first);
+        if (it != patternDependencies.end()) {
+            pair.second.populateVertexVectors(
+                feature, sharedShadowVertices->elements(), index, patternPositions, it->second, canonical);
+        } else {
+            pair.second.populateVertexVectors(
+                feature, sharedShadowVertices->elements(), index, patternPositions, {}, canonical);
+        }
+    }
+#endif
 }
 
 void FillExtrusionBucket::upload([[maybe_unused]] gfx::UploadPass& uploadPass) {
@@ -239,6 +300,14 @@ void FillExtrusionBucket::update(const FeatureStates& states,
 
         sharedVertices->updateModified();
     }
+
+#if MLN_RENDER_BACKEND_OPENGL
+    auto shadowIt = shadowPaintPropertyBinders.find(layerID);
+    if (shadowIt != shadowPaintPropertyBinders.end()) {
+        shadowIt->second.updateVertexVectors(states, layer, imagePositions);
+        sharedShadowVertices->updateModified();
+    }
+#endif
 }
 
 std::array<float, 3> FillExtrusionBucket::lightColor(const EvaluatedLight& light) {

@@ -258,6 +258,70 @@ const std::vector<TextureInfo> FillExtrusionPatternShaderInfo::textures = {
     TextureInfo{"u_image", idFillExtrusionImageTexture},
 };
 
+// Fill Extrusion Shadow: mask (roof triangles, non-instanced)
+using FillExtrusionShadowMaskShaderInfo = ShaderInfo<BuiltIn::FillExtrusionShadowMaskShader, gfx::Backend::Type::OpenGL>;
+
+const std::vector<UniformBlockInfo> FillExtrusionShadowMaskShaderInfo::uniformBlocks = {
+    UniformBlockInfo{"FillExtrusionShadowDrawableUBO", idFillExtrusionShadowDrawableUBO},
+    UniformBlockInfo{"FillExtrusionShadowPropsUBO", idFillExtrusionShadowPropsUBO},
+};
+const std::vector<AttributeInfo> FillExtrusionShadowMaskShaderInfo::attributes = {
+    AttributeInfo{"a_pos", idFillExtrusionShadowPosVertexAttribute},
+    AttributeInfo{"a_decimals_ed", idFillExtrusionShadowDecimalsEdAttribute},
+    AttributeInfo{"a_height", idFillExtrusionShadowHeightVertexAttribute},
+};
+const std::vector<TextureInfo> FillExtrusionShadowMaskShaderInfo::textures = {};
+
+// Fill Extrusion Shadow: mask (wall quads, instanced)
+using FillExtrusionShadowMaskInstancedShaderInfo =
+    ShaderInfo<BuiltIn::FillExtrusionShadowMaskInstancedShader, gfx::Backend::Type::OpenGL>;
+
+const std::vector<UniformBlockInfo> FillExtrusionShadowMaskInstancedShaderInfo::uniformBlocks = {
+    UniformBlockInfo{"FillExtrusionShadowDrawableUBO", idFillExtrusionShadowDrawableUBO},
+    UniformBlockInfo{"FillExtrusionShadowPropsUBO", idFillExtrusionShadowPropsUBO},
+};
+const std::vector<AttributeInfo> FillExtrusionShadowMaskInstancedShaderInfo::attributes = {
+    AttributeInfo{"a_pos", idFillExtrusionShadowPosVertexAttribute},
+};
+// Indexed by absolute GL attribute location, same as `attributes` above -- location 0 (a_pos) is
+// vertex-rate, so it's a placeholder here; the real (instance-rate) entries start at location 1.
+const std::vector<AttributeInfo> FillExtrusionShadowMaskInstancedShaderInfo::instanceAttributes = {
+    AttributeInfo{"", 0},
+    AttributeInfo{"a_outline_pos", idFillExtrusionShadowOutlinePosAttribute},
+    AttributeInfo{"a_decimals_ed", idFillExtrusionShadowDecimalsEdAttribute},
+    AttributeInfo{"a_next_outline_pos", idFillExtrusionShadowNextOutlinePosAttribute},
+    AttributeInfo{"a_next_decimals_ed", idFillExtrusionShadowNextDecimalsEdAttribute},
+    AttributeInfo{"a_base", idFillExtrusionShadowBaseVertexAttribute},
+    AttributeInfo{"a_height", idFillExtrusionShadowHeightVertexAttribute},
+};
+const std::vector<TextureInfo> FillExtrusionShadowMaskInstancedShaderInfo::textures = {};
+
+// Fill Extrusion Shadow: blur (horizontal pass)
+using FillExtrusionShadowBlurShaderInfo = ShaderInfo<BuiltIn::FillExtrusionShadowBlurShader, gfx::Backend::Type::OpenGL>;
+
+const std::vector<UniformBlockInfo> FillExtrusionShadowBlurShaderInfo::uniformBlocks = {
+    UniformBlockInfo{"FillExtrusionShadowPropsUBO", idFillExtrusionShadowPropsUBO},
+};
+const std::vector<AttributeInfo> FillExtrusionShadowBlurShaderInfo::attributes = {
+    AttributeInfo{"a_pos", idFillExtrusionShadowPosVertexAttribute},
+};
+const std::vector<TextureInfo> FillExtrusionShadowBlurShaderInfo::textures = {
+    TextureInfo{"u_image", idFillExtrusionShadowImageTexture},
+};
+
+// Fill Extrusion Shadow: composite (vertical blur + colourise)
+using FillExtrusionShadowShaderInfo = ShaderInfo<BuiltIn::FillExtrusionShadowShader, gfx::Backend::Type::OpenGL>;
+
+const std::vector<UniformBlockInfo> FillExtrusionShadowShaderInfo::uniformBlocks = {
+    UniformBlockInfo{"FillExtrusionShadowPropsUBO", idFillExtrusionShadowPropsUBO},
+};
+const std::vector<AttributeInfo> FillExtrusionShadowShaderInfo::attributes = {
+    AttributeInfo{"a_pos", idFillExtrusionShadowPosVertexAttribute},
+};
+const std::vector<TextureInfo> FillExtrusionShadowShaderInfo::textures = {
+    TextureInfo{"u_image", idFillExtrusionShadowImageTexture},
+};
+
 // Heatmap
 using HeatmapShaderInfo = ShaderInfo<BuiltIn::HeatmapShader, gfx::Backend::Type::OpenGL>;
 

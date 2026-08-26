@@ -1,14 +1,4 @@
-// Generated code, do not modify this file!
-#pragma once
-#include <mbgl/shaders/shader_source.hpp>
-
-namespace mln {
-namespace shaders {
-
-template <>
-struct ShaderSource<BuiltIn::FillExtrusionShadowMaskShader, gfx::Backend::Type::OpenGL> {
-    static constexpr const char* name = "FillExtrusionShadowMaskShader";
-    static constexpr const char* vertex = R"(layout (location = 0) in vec2 a_pos;
+layout (location = 0) in vec2 a_pos;
 layout (location = 1) in vec2 a_decimals_ed;
 
 layout (std140) uniform FillExtrusionShadowDrawableUBO {
@@ -29,16 +19,10 @@ layout (std140) uniform FillExtrusionShadowPropsUBO {
     lowp float props_pad2;
 };
 
-#ifndef HAS_UNIFORM_u_height
-layout (location = 2) in highp vec2 a_height;
-#endif
+#pragma mapbox: define highp float height
 
 void main() {
-    #ifndef HAS_UNIFORM_u_height
-highp float height = unpack_mix_vec2(a_height, u_height_t);
-#else
-highp float height = u_height;
-#endif
+    #pragma mapbox: initialize highp float height
 
     height = max(0.0, height);
 
@@ -52,13 +36,3 @@ highp float height = u_height;
     // projection of the point (p, z), not an approximation.
     gl_Position = u_matrix * vec4(p + u_offset_per_meter * z, 0.0, 1.0);
 }
-)";
-    static constexpr const char* fragment = R"(void main() {
-    // A binary silhouette. Blending is off, so overlapping geometry cannot compound.
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-}
-)";
-};
-
-} // namespace shaders
-} // namespace mln

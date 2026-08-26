@@ -498,6 +498,11 @@ enum {
     idFillExtrusionShadowDecimalsEdAttribute,
     idFillExtrusionShadowOutlinePosAttribute,
 
+    // OpenGL only: no SSBO-style manual instance indexing, so the "next" outline vertex is a real
+    // per-instance attribute, one vertex ahead of the pair above in the same shared buffer.
+    idFillExtrusionShadowNextOutlinePosAttribute,
+    idFillExtrusionShadowNextDecimalsEdAttribute,
+
     // Data driven. The order here must match the template pack passed to
     // readDataDrivenPaintProperties, which assigns ids sequentially from the first one.
     idFillExtrusionShadowBaseVertexAttribute,

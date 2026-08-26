@@ -1,22 +1,4 @@
-// Generated code, do not modify this file!
-#pragma once
-#include <mbgl/shaders/shader_source.hpp>
-
-namespace mln {
-namespace shaders {
-
-template <>
-struct ShaderSource<BuiltIn::FillExtrusionShadowBlurShader, gfx::Backend::Type::OpenGL> {
-    static constexpr const char* name = "FillExtrusionShadowBlurShader";
-    static constexpr const char* vertex = R"(layout (location = 0) in vec2 a_pos;
-out vec2 v_pos;
-
-void main() {
-    gl_Position = vec4(a_pos * 2.0 - 1.0, 0.0, 1.0);
-    v_pos = a_pos;
-}
-)";
-    static constexpr const char* fragment = R"(in vec2 v_pos;
+in vec2 v_pos;
 uniform sampler2D u_image;
 
 layout (std140) uniform FillExtrusionShadowPropsUBO {
@@ -49,8 +31,3 @@ void main() {
     vec2 step = vec2(u_texel_step.x, 0.0) * u_blur_scale;
     fragColor = vec4(fesBlur(v_pos, step), 0.0, 0.0, 1.0);
 }
-)";
-};
-
-} // namespace shaders
-} // namespace mln

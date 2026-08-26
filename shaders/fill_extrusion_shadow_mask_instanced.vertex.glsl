@@ -1,14 +1,4 @@
-// Generated code, do not modify this file!
-#pragma once
-#include <mbgl/shaders/shader_source.hpp>
-
-namespace mln {
-namespace shaders {
-
-template <>
-struct ShaderSource<BuiltIn::FillExtrusionShadowMaskInstancedShader, gfx::Backend::Type::OpenGL> {
-    static constexpr const char* name = "FillExtrusionShadowMaskInstancedShader";
-    static constexpr const char* vertex = R"(// Static unit quad: x in {0,1} selects p1 or p2, y in {0,1} is the lower/upper ring.
+// Static unit quad: x in {0,1} selects p1 or p2, y in {0,1} is the lower/upper ring.
 layout (location = 0) in vec2 a_pos;
 
 // GLES has no SSBO-style manual instance indexing, so unlike Vulkan (which read
@@ -37,24 +27,12 @@ layout (std140) uniform FillExtrusionShadowPropsUBO {
     lowp float props_pad2;
 };
 
-#ifndef HAS_UNIFORM_u_base
-layout (location = 5) in highp vec2 a_base;
-#endif
-#ifndef HAS_UNIFORM_u_height
-layout (location = 6) in highp vec2 a_height;
-#endif
+#pragma mapbox: define highp float base
+#pragma mapbox: define highp float height
 
 void main() {
-    #ifndef HAS_UNIFORM_u_base
-highp float base = unpack_mix_vec2(a_base, u_base_t);
-#else
-highp float base = u_base;
-#endif
-    #ifndef HAS_UNIFORM_u_height
-highp float height = unpack_mix_vec2(a_height, u_height_t);
-#else
-highp float height = u_height;
-#endif
+    #pragma mapbox: initialize highp float base
+    #pragma mapbox: initialize highp float height
 
     // The low bit of decimals_ed.x marks the last vertex of each ring: the next-vertex attributes
     // aren't meaningful for it (they'd belong to an unrelated ring), so skip this instance.
@@ -79,12 +57,3 @@ highp float height = u_height;
 
     gl_Position = u_matrix * vec4(p + u_offset_per_meter * z, 0.0, 1.0);
 }
-)";
-    static constexpr const char* fragment = R"(void main() {
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-}
-)";
-};
-
-} // namespace shaders
-} // namespace mln

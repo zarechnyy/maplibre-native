@@ -65,12 +65,13 @@ void DrawableGL::draw(PaintParameters& parameters) const {
     impl->uniformBuffers.bind();
     bindTextures();
 
+    const auto instanceCount = instanceAttributes ? instanceAttributes->getMinCount() : 1;
     for (const auto& seg : impl->segments) {
         const auto& glSeg = static_cast<DrawSegmentGL&>(*seg);
         const auto& mlSeg = glSeg.getSegment();
         if (mlSeg.indexLength > 0 && glSeg.getVertexArray().isValid()) {
             context.bindVertexArray = glSeg.getVertexArray().getID();
-            context.draw(glSeg.getMode(), mlSeg.indexOffset, mlSeg.indexLength);
+            context.draw(glSeg.getMode(), mlSeg.indexOffset, mlSeg.indexLength, instanceCount);
         }
     }
     // Unbind the VAO so that future buffer commands outside Drawable do not change the current VAO state
@@ -201,6 +202,30 @@ void DrawableGL::upload(gfx::UploadPass& uploadPass) {
         impl->attributeBuffers = std::move(vertexBuffers);
     }
 
+    // Same as above, but for per-instance data. Every existing (non-shadow) drawable has no
+    // instanceAttributes set, so this is a no-op for them -- getInstanceAttributes() on shaders
+    // without any registered instance attributes returns an empty array too.
+    if (instanceAttributes &&
+        (impl->instanceBindings.empty() ||
+         (!attributeUpdateTime || instanceAttributes->isModifiedAfter(*attributeUpdateTime)))) {
+        MLN_TRACE_ZONE(build instance attributes);
+
+        const auto& instanceDefaults = shader->getInstanceAttributes();
+
+        std::vector<std::unique_ptr<gfx::VertexBufferResource>> instanceVertexBuffers;
+        impl->instanceBindings = uploadPass.buildAttributeBindings(instanceAttributes->getMinCount(),
+                                                                    gfx::AttributeDataType::Byte,
+                                                                    static_cast<std::size_t>(-1),
+                                                                    {},
+                                                                    instanceDefaults,
+                                                                    *instanceAttributes,
+                                                                    usage,
+                                                                    attributeUpdateTime,
+                                                                    instanceVertexBuffers);
+
+        impl->instanceBuffers = std::move(instanceVertexBuffers);
+    }
+
     // Bind a VAO for each group of vertexes described by a segment
     for (const auto& seg : impl->segments) {
         MLN_TRACE_ZONE(segment);
@@ -220,7 +245,7 @@ void DrawableGL::upload(gfx::UploadPass& uploadPass) {
         if (!glSeg.getVertexArray().isValid() && impl->indexes) {
             auto vertexArray = glContext.createVertexArray();
             const auto& indexBuffer = static_cast<IndexBufferGL&>(*impl->indexes->getBuffer());
-            vertexArray.bind(glContext, *indexBuffer.buffer, impl->attributeBindings);
+            vertexArray.bind(glContext, *indexBuffer.buffer, impl->attributeBindings, impl->instanceBindings);
             assert(vertexArray.isValid());
             if (vertexArray.isValid()) {
                 glSeg.setVertexArray(std::move(vertexArray));

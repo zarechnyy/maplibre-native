@@ -61,7 +61,10 @@ public:
     VertexArray(VertexArray&& other)
         : state(std::move(other.state)) {}
 
-    void bind(Context&, const gfx::IndexBuffer&, const AttributeBindingArray&);
+    void bind(Context&,
+              const gfx::IndexBuffer&,
+              const AttributeBindingArray&,
+              const AttributeBindingArray& instanceBindings = {});
 
     VertexArray& operator=(VertexArray&& other) {
         state = std::move(other.state);
