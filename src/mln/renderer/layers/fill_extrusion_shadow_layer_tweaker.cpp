@@ -54,14 +54,32 @@ void FillExtrusionShadowLayerTweaker::execute(LayerGroupBase& layerGroup, const 
 
     propertiesUpdated = false;
 
-    // Direction the shadow is cast towards, in tile space, where +x is east and +y is south. The
-    // azimuth is map-anchored, so it keeps a fixed compass bearing as the map rotates.
-    const auto azimuthRad = util::deg2rad(static_cast<double>(evaluated.get<FillExtrusionShadowAzimuth>()));
+    // Direction the shadow is cast towards, in tile space, where +x is east and +y is south. A
+    // map-anchored light drives this instead of the standalone properties below, keeping the
+    // shadow consistent with the same light used for the building's own shading; a
+    // viewport-anchored light can't, since its azimuth is screen-relative and the shadow has to
+    // stay map-relative.
+    const auto& light = parameters.evaluatedLight;
+    const bool deriveFromLight = light.get<LightAnchor>() == LightAnchorType::Map;
+
+    double azimuthDeg;
+    double length;
+    if (deriveFromLight) {
+        const auto lightSpherical = light.get<LightPosition>().getSpherical(); // {radial, azimuthal, polar}
+        // light-position's azimuthal points toward the light; the shadow falls on the opposite side.
+        azimuthDeg = static_cast<double>(lightSpherical[1]) + 180.0;
+        // polar is measured from the zenith, i.e. 90 - elevation, so cot(elevation) = tan(polar).
+        length = std::tan(util::deg2rad(static_cast<double>(lightSpherical[2])));
+    } else {
+        azimuthDeg = static_cast<double>(evaluated.get<FillExtrusionShadowAzimuth>());
+        // Spec `minimum` is documentation only -- nothing upstream of here clamps.
+        length = evaluated.get<FillExtrusionShadowLength>();
+    }
+    length = std::max(length, 0.0);
+
+    const auto azimuthRad = util::deg2rad(azimuthDeg);
     const double dirX = std::sin(azimuthRad);
     const double dirY = -std::cos(azimuthRad);
-
-    // Spec `minimum` is documentation only -- nothing upstream of here clamps.
-    const auto length = std::max(evaluated.get<FillExtrusionShadowLength>(), 0.0f);
 
     // Metres of extrusion height convert to tile units as
     //
