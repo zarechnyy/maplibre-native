@@ -127,7 +127,7 @@ std::size_t RenderFillExtrusionLayer::removeAllDrawables() {
 
 bool RenderFillExtrusionLayer::shadowEnabled() const {
     const auto& evaluated = static_cast<const FillExtrusionLayerProperties&>(*evaluatedProperties).evaluated;
-    return evaluated.get<FillExtrusionShadowOpacity>() > 0.0f && evaluated.get<FillExtrusionShadowLength>() > 0.0f;
+    return evaluated.get<FillExtrusionShadowOpacity>() > 0.0f;
 }
 
 void RenderFillExtrusionLayer::teardownShadow(UniqueChangeRequestVec& changes) {

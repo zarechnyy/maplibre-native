@@ -66,9 +66,8 @@ class BuildingFillExtrusionActivity : AppCompatActivity() {
             PropertyFactory.fillExtrusionBase(Expression.get("render_min_height")),
             PropertyFactory.fillExtrusionOpacity(0.9f),
             PropertyFactory.fillExtrusionShadowColor(Color.BLACK),
-            PropertyFactory.fillExtrusionShadowOpacity(0.10f),
-            PropertyFactory.fillExtrusionShadowLength(0.5f),
-            PropertyFactory.fillExtrusionShadowAzimuth(225f)
+            // The shadow direction and length follow the light
+            PropertyFactory.fillExtrusionShadowOpacity(0.10f)
         )
         style.addLayer(fillExtrusionLayer)
         // --8<-- [end:setupBuildings]
