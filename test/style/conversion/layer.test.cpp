@@ -177,15 +177,10 @@ TEST(StyleConversion, FillExtrusionShadowDefaults) {
     // Undefined until a style sets them, so the renderer can tell "untouched" from "explicitly 0".
     EXPECT_TRUE(layer.getFillExtrusionShadowColor().isUndefined());
     EXPECT_TRUE(layer.getFillExtrusionShadowOpacity().isUndefined());
-    EXPECT_TRUE(layer.getFillExtrusionShadowLength().isUndefined());
-    EXPECT_TRUE(layer.getFillExtrusionShadowAzimuth().isUndefined());
 
     // Shadows are off by default: opacity 0 means the renderer allocates nothing at all.
     EXPECT_EQ(PropertyValue<float>(0.0f), FillExtrusionLayer::getDefaultFillExtrusionShadowOpacity());
-    EXPECT_EQ(PropertyValue<Color>(Color(0.0f, 0.0f, 0.0f, 0.35f)),
-              FillExtrusionLayer::getDefaultFillExtrusionShadowColor());
-    EXPECT_EQ(PropertyValue<float>(0.32f), FillExtrusionLayer::getDefaultFillExtrusionShadowLength());
-    EXPECT_EQ(PropertyValue<float>(225.0f), FillExtrusionLayer::getDefaultFillExtrusionShadowAzimuth());
+    EXPECT_EQ(PropertyValue<Color>(Color::black()), FillExtrusionLayer::getDefaultFillExtrusionShadowColor());
 }
 
 TEST(StyleConversion, FillExtrusionShadowRoundtrip) {
@@ -195,9 +190,7 @@ TEST(StyleConversion, FillExtrusionShadowRoundtrip) {
         "source": "composite",
         "paint": {
             "fill-extrusion-shadow-color": "rgba(10, 20, 30, 1)",
-            "fill-extrusion-shadow-opacity": 0.5,
-            "fill-extrusion-shadow-length": 1.5,
-            "fill-extrusion-shadow-azimuth": 315
+            "fill-extrusion-shadow-opacity": 0.5
         }
     })JSON");
 
@@ -216,22 +209,19 @@ TEST(StyleConversion, FillExtrusionShadowRoundtrip) {
     EXPECT_NEAR(1.0f, shadowColor.asConstant().a, 1e-5);
 
     EXPECT_EQ(PropertyValue<float>(0.5f), fillExtrusion->getFillExtrusionShadowOpacity());
-    EXPECT_EQ(PropertyValue<float>(1.5f), fillExtrusion->getFillExtrusionShadowLength());
-    EXPECT_EQ(PropertyValue<float>(315.0f), fillExtrusion->getFillExtrusionShadowAzimuth());
 
-    // All four survive a serialize/parse round trip.
+    // Both survive a serialize/parse round trip.
     auto value = layer->serialize();
     ASSERT_NE(nullptr, value.getObject());
     const auto& paint = *value.getObject()->at("paint").getObject();
-    EXPECT_EQ(4u, paint.size());
+    EXPECT_EQ(2u, paint.size());
 
     auto roundTripped = parseLayer(stringifyLayer(value));
     ASSERT_NE(nullptr, roundTripped);
     const auto* roundTrippedFillExtrusion = static_cast<const FillExtrusionLayer*>(roundTripped.get());
     EXPECT_EQ(fillExtrusion->getFillExtrusionShadowColor(), roundTrippedFillExtrusion->getFillExtrusionShadowColor());
-    EXPECT_EQ(fillExtrusion->getFillExtrusionShadowLength(), roundTrippedFillExtrusion->getFillExtrusionShadowLength());
-    EXPECT_EQ(fillExtrusion->getFillExtrusionShadowAzimuth(),
-              roundTrippedFillExtrusion->getFillExtrusionShadowAzimuth());
+    EXPECT_EQ(fillExtrusion->getFillExtrusionShadowOpacity(),
+              roundTrippedFillExtrusion->getFillExtrusionShadowOpacity());
 }
 
 TEST(StyleConversion, FillExtrusionShadowAcceptsCameraExpression) {

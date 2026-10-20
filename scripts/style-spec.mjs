@@ -204,29 +204,17 @@ modifiedReferenceSpec["layout_symbol"]["symbol-screen-space"] = {
 // `npm run copy-style-spec` overwrites that file wholesale from the npm
 // @maplibre/maplibre-gl-style-spec package and would silently delete them.
 //
-// All are `data-constant`: they live in a single per-layer uniform buffer, so they add no
-// vertex attributes and no shader permutations. `minimum`/`maximum` below are documentation
-// only -- nothing in core clamps them, so the renderer must.
-modifiedReferenceSpec["paint_fill-extrusion"]["fill-extrusion-shadow-color"] = {
-    "type": "color",
-    "default": "rgba(0,0,0,0.35)",
-    "doc": "The color of the ground shadow cast by the extruded geometry. Has no effect while `fill-extrusion-shadow-opacity` is 0.",
-    "transition": true,
-    "expression": {
-        "interpolated": true,
-        "parameters": [
-            "zoom"
-        ]
-    },
-    "property-type": "data-constant"
-};
-
+// Definitions follow https://github.com/maplibre/maplibre-style-spec/pull/1870. Both are
+// `data-constant`: they live in a single per-layer uniform buffer, so they add no vertex
+// attributes and no shader permutations. The direction and length of the shadow come from the
+// root `light`. `minimum`/`maximum` below are documentation only -- nothing in core clamps them,
+// so the renderer must.
 modifiedReferenceSpec["paint_fill-extrusion"]["fill-extrusion-shadow-opacity"] = {
     "type": "number",
     "default": 0,
     "minimum": 0,
     "maximum": 1,
-    "doc": "The opacity of the ground shadow cast by the extruded geometry. A value of 0 disables the shadow entirely. This is rendered on a per-layer, not per-feature, basis.",
+    "doc": "Opacity of the shadow cast onto the ground by this layer's extruded geometries. A value of `0` disables the shadow entirely. The shadow direction and length are derived from the root `light` property. With `light.anchor` set to `map`, the shadow keeps its geographic direction when the map is rotated; with `viewport` (the default), it keeps its direction on screen.",
     "transition": true,
     "expression": {
         "interpolated": true,
@@ -237,27 +225,10 @@ modifiedReferenceSpec["paint_fill-extrusion"]["fill-extrusion-shadow-opacity"] =
     "property-type": "data-constant"
 };
 
-modifiedReferenceSpec["paint_fill-extrusion"]["fill-extrusion-shadow-length"] = {
-    "type": "number",
-    "default": 0.32,
-    "minimum": 0,
-    "doc": "The length of the ground shadow, as a multiple of the extrusion height. This is the cotangent of the light source's elevation angle, so 1 corresponds to an elevation of 45 degrees and 0.32 to roughly 72 degrees. Larger values cast longer, shallower shadows.",
-    "transition": true,
-    "expression": {
-        "interpolated": true,
-        "parameters": [
-            "zoom"
-        ]
-    },
-    "property-type": "data-constant"
-};
-
-modifiedReferenceSpec["paint_fill-extrusion"]["fill-extrusion-shadow-azimuth"] = {
-    "type": "number",
-    "default": 225,
-    "period": 360,
-    "units": "degrees",
-    "doc": "The compass direction the ground shadow is cast towards, measured clockwise from due north. The shadow is anchored to the map, so it keeps a fixed compass direction as the map rotates.",
+modifiedReferenceSpec["paint_fill-extrusion"]["fill-extrusion-shadow-color"] = {
+    "type": "color",
+    "default": "#000000",
+    "doc": "Color of the shadow cast onto the ground by this layer's extruded geometries. If this color is specified as `rgba` with an alpha component, the alpha component will be ignored; use `fill-extrusion-shadow-opacity` to set shadow opacity. Has no visible effect when `fill-extrusion-shadow-opacity` is `0`.",
     "transition": true,
     "expression": {
         "interpolated": true,

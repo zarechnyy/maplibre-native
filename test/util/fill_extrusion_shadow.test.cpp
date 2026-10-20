@@ -1,6 +1,8 @@
 #include <mln/test/util.hpp>
 
 #include <mln/math/angles.hpp>
+#include <mln/renderer/layers/fill_extrusion_shadow_layer_tweaker.hpp>
+#include <mln/style/position.hpp>
 #include <mln/util/constants.hpp>
 #include <mln/util/projection.hpp>
 
@@ -83,29 +85,56 @@ TEST(FillExtrusionShadow, MetersToTileUnitsDoublesPerTileZoomLevel) {
     }
 }
 
-TEST(FillExtrusionShadow, ShadowDirectionFromAzimuth) {
-    // Tile space is +x east, +y south, and the azimuth is the compass bearing the shadow falls
-    // towards, so the direction is (sin a, -cos a).
-    const auto direction = [](double degrees) {
-        const double a = util::deg2rad(degrees);
-        return std::pair<double, double>{std::sin(a), -std::cos(a)};
-    };
+namespace {
 
-    const auto north = direction(0);
-    EXPECT_NEAR(0.0, north.first, 1e-9);
-    EXPECT_NEAR(-1.0, north.second, 1e-9); // towards -y, i.e. north
+/// The light vector for `light.position` [1, azimuthal, polar], as style::Position computes it
+std::array<float, 3> lightAt(float azimuthal, float polar) {
+    std::array<float, 3> spherical{{1.0f, azimuthal, polar}};
+    return style::Position(spherical).getCartesian();
+}
 
-    const auto east = direction(90);
-    EXPECT_NEAR(1.0, east.first, 1e-9);
-    EXPECT_NEAR(0.0, east.second, 1e-9);
+} // namespace
 
-    const auto south = direction(180);
-    EXPECT_NEAR(0.0, south.first, 1e-9);
-    EXPECT_NEAR(1.0, south.second, 1e-9);
+TEST(FillExtrusionShadow, DirectionFollowsLight) {
+    // The shadow falls opposite the light: azimuth + 180 degrees, as a compass bearing in tile
+    // space (+x east, +y south), and tan(polar) times the extrusion height long.
+    for (const float azimuthal : {0.0f, 90.0f, 210.0f, 315.0f}) {
+        for (const float polar : {10.0f, 30.0f, 60.0f}) {
+            const auto shadow = fillExtrusionShadowDirection(lightAt(azimuthal, polar));
+            ASSERT_TRUE(shadow);
+            const double bearing = util::deg2rad(static_cast<double>(azimuthal) + 180.0);
+            EXPECT_NEAR(std::sin(bearing), shadow->x, 1e-5) << azimuthal << " " << polar;
+            EXPECT_NEAR(-std::cos(bearing), shadow->y, 1e-5) << azimuthal << " " << polar;
+            EXPECT_NEAR(std::tan(util::deg2rad(static_cast<double>(polar))), shadow->length, 1e-5);
+        }
+    }
+}
 
-    // The default, 225, must point south-west: -x and +y.
-    const auto southWest = direction(225);
-    EXPECT_LT(southWest.first, 0.0);
-    EXPECT_GT(southWest.second, 0.0);
-    EXPECT_NEAR(1.0, std::hypot(southWest.first, southWest.second), 1e-9);
+TEST(FillExtrusionShadow, DefaultLight) {
+    // The default light, [1.15, 210, 30], casts a shadow towards 30 degrees (north-north-east),
+    // tan(30) = 0.577 times the height.
+    std::array<float, 3> spherical{{1.15f, 210.0f, 30.0f}};
+    const auto shadow = fillExtrusionShadowDirection(style::Position(spherical).getCartesian());
+    ASSERT_TRUE(shadow);
+    EXPECT_GT(shadow->x, 0.0);
+    EXPECT_LT(shadow->y, 0.0);
+    EXPECT_NEAR(1.0, std::hypot(shadow->x, shadow->y), 1e-9);
+    EXPECT_NEAR(0.57735, shadow->length, 1e-4);
+}
+
+TEST(FillExtrusionShadow, OverheadAndLowLights) {
+    // Straight overhead: no shadow length
+    const auto overhead = fillExtrusionShadowDirection(lightAt(0, 0));
+    ASSERT_TRUE(overhead);
+    EXPECT_NEAR(0.0, overhead->length, 1e-6);
+
+    // Low lights are clamped instead of growing without bound
+    const double maxLength = 1.0 / std::tan(util::deg2rad(minimumShadowElevation));
+    const auto low = fillExtrusionShadowDirection(lightAt(0, 89.9f));
+    ASSERT_TRUE(low);
+    EXPECT_NEAR(maxLength, low->length, 1e-9);
+
+    // At or below the horizon there is no shadow
+    EXPECT_FALSE(fillExtrusionShadowDirection({{0.0f, 1.0f, 0.0f}}));
+    EXPECT_FALSE(fillExtrusionShadowDirection(lightAt(0, 120)));
 }

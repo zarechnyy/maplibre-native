@@ -56,21 +56,13 @@ public:
 
     jni::Local<jni::Object<jni::ObjectTag>> getFillExtrusionVerticalGradient(jni::JNIEnv&);
 
-    jni::Local<jni::Object<jni::ObjectTag>> getFillExtrusionShadowColor(jni::JNIEnv&);
-    void setFillExtrusionShadowColorTransition(jni::JNIEnv&, jlong duration, jlong delay);
-    jni::Local<jni::Object<TransitionOptions>> getFillExtrusionShadowColorTransition(jni::JNIEnv&);
-
     jni::Local<jni::Object<jni::ObjectTag>> getFillExtrusionShadowOpacity(jni::JNIEnv&);
     void setFillExtrusionShadowOpacityTransition(jni::JNIEnv&, jlong duration, jlong delay);
     jni::Local<jni::Object<TransitionOptions>> getFillExtrusionShadowOpacityTransition(jni::JNIEnv&);
 
-    jni::Local<jni::Object<jni::ObjectTag>> getFillExtrusionShadowLength(jni::JNIEnv&);
-    void setFillExtrusionShadowLengthTransition(jni::JNIEnv&, jlong duration, jlong delay);
-    jni::Local<jni::Object<TransitionOptions>> getFillExtrusionShadowLengthTransition(jni::JNIEnv&);
-
-    jni::Local<jni::Object<jni::ObjectTag>> getFillExtrusionShadowAzimuth(jni::JNIEnv&);
-    void setFillExtrusionShadowAzimuthTransition(jni::JNIEnv&, jlong duration, jlong delay);
-    jni::Local<jni::Object<TransitionOptions>> getFillExtrusionShadowAzimuthTransition(jni::JNIEnv&);
+    jni::Local<jni::Object<jni::ObjectTag>> getFillExtrusionShadowColor(jni::JNIEnv&);
+    void setFillExtrusionShadowColorTransition(jni::JNIEnv&, jlong duration, jlong delay);
+    jni::Local<jni::Object<TransitionOptions>> getFillExtrusionShadowColorTransition(jni::JNIEnv&);
 
 }; // class FillExtrusionLayer
 

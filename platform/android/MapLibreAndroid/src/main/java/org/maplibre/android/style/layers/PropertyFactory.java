@@ -1270,37 +1270,7 @@ The unit is in density-independent pixels only for SDF sprites that were created
   }
 
   /**
-   * The color of the ground shadow cast by the extruded geometry. Has no effect while {@link PropertyFactory#fillExtrusionShadowOpacity} is 0.
-   *
-   * @param value a int color value
-   * @return property wrapper around String color
-   */
-  public static PropertyValue<String> fillExtrusionShadowColor(@ColorInt int value) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-color", colorToRgbaString(value));
-  }
-
-  /**
-   * The color of the ground shadow cast by the extruded geometry. Has no effect while {@link PropertyFactory#fillExtrusionShadowOpacity} is 0.
-   *
-   * @param value a String value
-   * @return property wrapper around String
-   */
-  public static PropertyValue<String> fillExtrusionShadowColor(String value) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-color", value);
-  }
-
-  /**
-   * The color of the ground shadow cast by the extruded geometry. Has no effect while {@link PropertyFactory#fillExtrusionShadowOpacity} is 0.
-   *
-   * @param expression an expression statement
-   * @return property wrapper around an expression statement
-   */
-  public static PropertyValue<Expression> fillExtrusionShadowColor(Expression expression) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-color", expression);
-  }
-
-  /**
-   * The opacity of the ground shadow cast by the extruded geometry. A value of 0 disables the shadow entirely. This is rendered on a per-layer, not per-feature, basis.
+   * Opacity of the shadow cast onto the ground by this layer's extruded geometries. A value of `0` disables the shadow entirely. The shadow direction and length are derived from the root `light` property. With `light.anchor` set to `map`, the shadow keeps its geographic direction when the map is rotated; with `viewport` (the default), it keeps its direction on screen.
    *
    * @param value a Float value
    * @return property wrapper around Float
@@ -1310,7 +1280,7 @@ The unit is in density-independent pixels only for SDF sprites that were created
   }
 
   /**
-   * The opacity of the ground shadow cast by the extruded geometry. A value of 0 disables the shadow entirely. This is rendered on a per-layer, not per-feature, basis.
+   * Opacity of the shadow cast onto the ground by this layer's extruded geometries. A value of `0` disables the shadow entirely. The shadow direction and length are derived from the root `light` property. With `light.anchor` set to `map`, the shadow keeps its geographic direction when the map is rotated; with `viewport` (the default), it keeps its direction on screen.
    *
    * @param expression an expression statement
    * @return property wrapper around an expression statement
@@ -1320,43 +1290,33 @@ The unit is in density-independent pixels only for SDF sprites that were created
   }
 
   /**
-   * The length of the ground shadow, as a multiple of the extrusion height. This is the cotangent of the light source's elevation angle, so 1 corresponds to an elevation of 45 degrees and 0.32 to roughly 72 degrees. Larger values cast longer, shallower shadows.
+   * Color of the shadow cast onto the ground by this layer's extruded geometries. If this color is specified as `rgba` with an alpha component, the alpha component will be ignored; use {@link PropertyFactory#fillExtrusionShadowOpacity} to set shadow opacity. Has no visible effect when {@link PropertyFactory#fillExtrusionShadowOpacity} is `0`.
    *
-   * @param value a Float value
-   * @return property wrapper around Float
+   * @param value a int color value
+   * @return property wrapper around String color
    */
-  public static PropertyValue<Float> fillExtrusionShadowLength(Float value) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-length", value);
+  public static PropertyValue<String> fillExtrusionShadowColor(@ColorInt int value) {
+    return new PaintPropertyValue<>("fill-extrusion-shadow-color", colorToRgbaString(value));
   }
 
   /**
-   * The length of the ground shadow, as a multiple of the extrusion height. This is the cotangent of the light source's elevation angle, so 1 corresponds to an elevation of 45 degrees and 0.32 to roughly 72 degrees. Larger values cast longer, shallower shadows.
+   * Color of the shadow cast onto the ground by this layer's extruded geometries. If this color is specified as `rgba` with an alpha component, the alpha component will be ignored; use {@link PropertyFactory#fillExtrusionShadowOpacity} to set shadow opacity. Has no visible effect when {@link PropertyFactory#fillExtrusionShadowOpacity} is `0`.
+   *
+   * @param value a String value
+   * @return property wrapper around String
+   */
+  public static PropertyValue<String> fillExtrusionShadowColor(String value) {
+    return new PaintPropertyValue<>("fill-extrusion-shadow-color", value);
+  }
+
+  /**
+   * Color of the shadow cast onto the ground by this layer's extruded geometries. If this color is specified as `rgba` with an alpha component, the alpha component will be ignored; use {@link PropertyFactory#fillExtrusionShadowOpacity} to set shadow opacity. Has no visible effect when {@link PropertyFactory#fillExtrusionShadowOpacity} is `0`.
    *
    * @param expression an expression statement
    * @return property wrapper around an expression statement
    */
-  public static PropertyValue<Expression> fillExtrusionShadowLength(Expression expression) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-length", expression);
-  }
-
-  /**
-   * The compass direction the ground shadow is cast towards, measured clockwise from due north. The shadow is anchored to the map, so it keeps a fixed compass direction as the map rotates.
-   *
-   * @param value a Float value
-   * @return property wrapper around Float
-   */
-  public static PropertyValue<Float> fillExtrusionShadowAzimuth(Float value) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-azimuth", value);
-  }
-
-  /**
-   * The compass direction the ground shadow is cast towards, measured clockwise from due north. The shadow is anchored to the map, so it keeps a fixed compass direction as the map rotates.
-   *
-   * @param expression an expression statement
-   * @return property wrapper around an expression statement
-   */
-  public static PropertyValue<Expression> fillExtrusionShadowAzimuth(Expression expression) {
-    return new PaintPropertyValue<>("fill-extrusion-shadow-azimuth", expression);
+  public static PropertyValue<Expression> fillExtrusionShadowColor(Expression expression) {
+    return new PaintPropertyValue<>("fill-extrusion-shadow-color", expression);
   }
 
   /**

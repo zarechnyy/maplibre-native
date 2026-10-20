@@ -26,6 +26,24 @@ namespace mln {
 using namespace shaders;
 using namespace style;
 
+std::optional<FillExtrusionShadowDirection> fillExtrusionShadowDirection(const std::array<float, 3>& lightPosition) {
+    const double x = lightPosition[0];
+    const double y = lightPosition[1];
+    const double z = lightPosition[2];
+    if (z <= 0.0) {
+        return std::nullopt;
+    }
+    const double horizontal = std::hypot(x, y);
+    if (horizontal == 0.0) {
+        // Straight overhead
+        return FillExtrusionShadowDirection{};
+    }
+    // The shading lights walls whose normal faces away from (x, y), so the shadow falls along it
+    const double maxLength = 1.0 / std::tan(util::deg2rad(minimumShadowElevation));
+    return FillExtrusionShadowDirection{
+        .x = x / horizontal, .y = y / horizontal, .length = std::min(horizontal / z, maxLength)};
+}
+
 void FillExtrusionShadowLayerTweaker::execute(LayerGroupBase& layerGroup, const PaintParameters& parameters) {
     if (layerGroup.empty()) {
         return;
@@ -41,10 +59,26 @@ void FillExtrusionShadowLayerTweaker::execute(LayerGroupBase& layerGroup, const 
     const auto debugGroup = parameters.encoder->createDebugGroup(label.c_str());
 #endif
 
-    // Spec `minimum`/`maximum` are documentation only, so clamp here rather than trusting the style.
-    const auto opacity = util::clamp(evaluated.get<FillExtrusionShadowOpacity>(), 0.0f, 1.0f);
+    // The direction and length come from the root light, through the same vector the building
+    // shading uses: with `light.anchor: map` the shadow keeps its geographic direction, with
+    // `viewport` it keeps its direction on screen.
+    const auto shadow = fillExtrusionShadowDirection(
+        FillExtrusionBucket::lightPosition(parameters.evaluatedLight, state));
 
-    const FillExtrusionShadowPropsUBO propsUBO = {.color = evaluated.get<FillExtrusionShadowColor>(),
+    // Spec `minimum`/`maximum` are documentation only, so clamp here rather than trusting the style.
+    // A light at or below the horizon casts no shadow.
+    const auto opacity = shadow ? util::clamp(evaluated.get<FillExtrusionShadowOpacity>(), 0.0f, 1.0f) : 0.0f;
+
+    // The alpha of the shadow color is ignored, `fill-extrusion-shadow-opacity` sets it. Colors are
+    // premultiplied, so recover the straight color first.
+    const auto& shadowColor = evaluated.get<FillExtrusionShadowColor>();
+    const Color color = shadowColor.a > 0.0f ? Color{shadowColor.r / shadowColor.a,
+                                                     shadowColor.g / shadowColor.a,
+                                                     shadowColor.b / shadowColor.a,
+                                                     1.0f}
+                                             : Color::black();
+
+    const FillExtrusionShadowPropsUBO propsUBO = {.color = color,
                                                   .opacity = opacity,
                                                   .base = constOrDefault<FillExtrusionBase>(evaluated),
                                                   .height = constOrDefault<FillExtrusionHeight>(evaluated),
@@ -54,32 +88,9 @@ void FillExtrusionShadowLayerTweaker::execute(LayerGroupBase& layerGroup, const 
 
     propertiesUpdated = false;
 
-    // Direction the shadow is cast towards, in tile space, where +x is east and +y is south. A
-    // map-anchored light drives this instead of the standalone properties below, keeping the
-    // shadow consistent with the same light used for the building's own shading; a
-    // viewport-anchored light can't, since its azimuth is screen-relative and the shadow has to
-    // stay map-relative.
-    const auto& light = parameters.evaluatedLight;
-    const bool deriveFromLight = light.get<LightAnchor>() == LightAnchorType::Map;
-
-    double azimuthDeg;
-    double length;
-    if (deriveFromLight) {
-        const auto lightSpherical = light.get<LightPosition>().getSpherical(); // {radial, azimuthal, polar}
-        // light-position's azimuthal points toward the light; the shadow falls on the opposite side.
-        azimuthDeg = static_cast<double>(lightSpherical[1]) + 180.0;
-        // polar is measured from the zenith, i.e. 90 - elevation, so cot(elevation) = tan(polar).
-        length = std::tan(util::deg2rad(static_cast<double>(lightSpherical[2])));
-    } else {
-        azimuthDeg = static_cast<double>(evaluated.get<FillExtrusionShadowAzimuth>());
-        // Spec `minimum` is documentation only -- nothing upstream of here clamps.
-        length = evaluated.get<FillExtrusionShadowLength>();
-    }
-    length = std::max(length, 0.0);
-
-    const auto azimuthRad = util::deg2rad(azimuthDeg);
-    const double dirX = std::sin(azimuthRad);
-    const double dirY = -std::cos(azimuthRad);
+    const double dirX = shadow ? shadow->x : 0.0;
+    const double dirY = shadow ? shadow->y : 0.0;
+    const double length = shadow ? shadow->length : 0.0;
 
     // Metres of extrusion height convert to tile units as
     //
